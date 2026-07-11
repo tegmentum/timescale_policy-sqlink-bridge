@@ -1,0 +1,28 @@
+[package]
+name = "timescale-policy-sqlite-bridge-dynlink"
+version = "2.19.0"
+edition = "2021"
+description = "Phase A dynlink-mode sqlite bridge — routes SQL dispatch through compose:dynlink/linker against a resident provider."
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+members = ["."]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = { version = "0.41", features = ["macros"] }
+wit-bindgen-rt = { version = "0.41", features = ["bitflags"] }
+ciborium = { version = "0.2", default-features = false }
+ciborium-io = { version = "0.2", default-features = false }
+serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
+serde_bytes = { version = "0.11", default-features = false, features = ["alloc"] }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

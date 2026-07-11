@@ -1,0 +1,24 @@
+package sqlite-bridge:timescale-policy@0.1.0;
+
+/// Phase A dynlink-mode sqlite bridge.
+///
+/// The bridge imports `compose:dynlink/linker` for outbound
+/// dispatch to a resident provider and exports the declarative
+/// `sqlite:extension@1.0.0` metadata + scalar-function pair
+/// (plus `aggregate-function` when the catalog surfaces any
+/// aggregate / window functions, and `vtab` when it surfaces any
+/// table-functions). The host reads `metadata.describe()` at
+/// load, installs sqlite3 trampolines against every advertised
+/// scalar / aggregate / vtab, and routes per-row calls back
+/// through the matching dispatch export.
+world bridge {
+    import compose:dynlink/linker@0.1.0;
+
+    // sqlite:extension imports needed by the exports' types.
+    import sqlite:extension/types@1.0.0;
+    import sqlite:extension/policy@1.0.0;
+
+    export sqlite:extension/metadata@1.0.0;
+    export sqlite:extension/scalar-function@1.0.0;
+    export sqlite:extension/vtab@1.0.0;
+}
