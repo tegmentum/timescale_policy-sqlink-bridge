@@ -21,7 +21,7 @@ use bindings::sqlite::extension::types::{FunctionFlags, SqlValue};
 
 use bindings::compose::dynlink::linker;
 
-const PROVIDER_ID: &str = "timescale_core-composed";
+const PROVIDER_ID: &str = "timescale_policy-composed";
 const EXTENSION_ROOT: &str = "timescale";
 const CATALOG_EXTENSION: &str = "timescaledb";
 const CATALOG_VERSION: &str = "2.19.0";
@@ -499,12 +499,20 @@ impl VtabGuest for Component {
         _table_name: String,
         _args: Vec<String>,
     ) -> Result<String, String> {
-        let _ = vtab_name_by_id(vtab_id)
-            .ok_or_else(|| format!("unknown vtab id {}", vtab_id))?;
-        // Single-column BLOB schema. Hidden `_arg0` matches the
-        // table-valued-function call form `f(g1)` — the query
-        // planner binds the argv slot through xBestIndex.
-        Ok("CREATE TABLE x(\"result\" BLOB, \"_arg0\" HIDDEN)".to_string())
+        // Per-vtab CREATE TABLE schema. Each arm was emitted from
+        // the shim-interface DB's `table_functions.output_columns_json`
+        // + `param_types_json.len()` — real output column names +
+        // affinities, hidden slot per positional argv. The final `_`
+        // arm covers vtab ids the manifest never advertised (unknown
+        // to this bridge — surface as an error so callers see the
+        // mismatch immediately) and functions whose shim-interface row
+        // predates the B5 `output_columns_json` schema (opaque single-
+        // BLOB fallback with 4 hidden argv slots).
+        match vtab_id {
+                2000000 => Ok("CREATE TABLE x(\"result\" BLOB, \"_arg0\" HIDDEN, \"_arg1\" HIDDEN, \"_arg2\" HIDDEN, \"_arg3\" HIDDEN, \"_arg4\" HIDDEN, \"_arg5\" HIDDEN, \"_arg6\" HIDDEN, \"_arg7\" HIDDEN, \"_arg8\" HIDDEN, \"_arg9\" HIDDEN, \"_arg10\" HIDDEN, \"_arg11\" HIDDEN, \"_arg12\" HIDDEN, \"_arg13\" HIDDEN, \"_arg14\" HIDDEN)".to_string()),
+                2000001 => Ok("CREATE TABLE x(\"result\" BLOB, \"_arg0\" HIDDEN)".to_string()),
+            _ => Err(format!("unknown vtab id {}", vtab_id)),
+        }
     }
 
     fn destroy(_vtab_id: u64, _instance_id: u64) -> Result<(), String> { Ok(()) }
